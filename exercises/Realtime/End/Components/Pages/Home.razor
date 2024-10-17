@@ -1,0 +1,67 @@
+﻿@page "/"
+@using OpenAI.RealtimeConversation
+@using System.IO.Pipelines
+@implements IDisposable
+@inject RealtimeConversationClient RealtimeConversationClient
+
+<PageTitle>Home</PageTitle>
+
+<h1>Realtime</h1>
+<p>Note that this requires deployment of the model <code>gpt-4o-realtime-preview</code>.</p>
+
+<Microphone OnMicAvailable="@OnMicAvailable" />
+<Speaker @ref="@speaker" />
+
+<ul>
+    @foreach (var message in messages)
+    {
+        <li>@message</li>
+    }
+</ul>
+
+@code {
+    ConversationManager? conversationManager;
+    CancellationTokenSource disposalCts = new();
+    Speaker? speaker;
+    List<string> messages = new();
+
+    private void OnMicAvailable(PipeReader micReader)
+    {
+        conversationManager = new(RealtimeConversationClient);
+        _ = RunAsBackgroundTask(() => conversationManager.RunAsync(micReader.AsStream(), speaker!, AddMessageAsync, disposalCts.Token));
+    }
+
+    public void Dispose()
+    {
+        disposalCts.Cancel();
+        conversationManager?.Dispose();
+    }
+
+    private async Task AddMessageAsync(string message)
+    {
+        // This is intended to be called from outside the event handling system,
+        // so we must manually dispatch to the sync context and call StateHasChanged.
+        await InvokeAsync(() =>
+        {
+            messages.Add(message);
+            StateHasChanged();
+        });
+    }
+
+    private Task RunAsBackgroundTask(Func<Task> work)
+    {
+        // Since this is a background task, we have to catch any exceptions and transfer them
+        // back into this component's context so they can be displayed.
+        return Task.Run(async () =>
+        {
+            try
+            {
+                await work();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _ = DispatchExceptionAsync(ex);
+            }
+        });
+    }
+}
