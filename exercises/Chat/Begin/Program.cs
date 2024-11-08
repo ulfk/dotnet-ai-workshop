@@ -16,7 +16,7 @@ var azureOpenAiConfig = hostBuilder.Configuration.GetRequiredSection("AzureOpenA
 var innerChatClient = new AzureOpenAIClient(new Uri(azureOpenAiConfig["Endpoint"]!), new ApiKeyCredential(azureOpenAiConfig["Key"]!))
     .AsChatClient("gpt-4o-mini");
 // Or for Ollama:
-//IChatClient innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llama3.1");
+//var innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llama3.1");
 
 hostBuilder.Services.AddChatClient(pipeline => pipeline
     .Use(innerChatClient));

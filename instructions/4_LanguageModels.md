@@ -12,10 +12,7 @@ For Azure OpenAI, you should have code like this:
 
 ```cs
 var azureOpenAiConfig = hostBuilder.Configuration.GetRequiredSection("AzureOpenAI");
-
-var innerChatClient = new AzureOpenAIClient(
-    new Uri(azureOpenAiConfig["Endpoint"]!),
-    new ApiKeyCredential(azureOpenAiConfig["Key"]!))
+var innerChatClient = new AzureOpenAIClient(new Uri(azureOpenAiConfig["Endpoint"]!), new ApiKeyCredential(azureOpenAiConfig["Key"]!))
     .AsChatClient("gpt-4o-mini");
 ```
 
@@ -24,8 +21,7 @@ If you're using a model other than `gpt-4o-mini`, update this code.
 For Ollama, you should assign a value like this:
 
 ```cs
-IChatClient innerChatClient = new OllamaChatClient(
-    new Uri("http://localhost:11434"), "llama3.1");
+var innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llama3.1");
 ```
 
 **If possible, get access to *both* an OpenAI-based service and Ollama. It's instructive to try them both and compare the performance of different models.**
