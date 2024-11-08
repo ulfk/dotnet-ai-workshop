@@ -377,6 +377,7 @@ class Cart
 {
     public int NumPairsOfSocks { get; set; }
 
+    [Description("Adds the specified number of pairs of socks to the cart")]
     public void AddSocksToCart(int numPairs)
     {
         NumPairsOfSocks += numPairs;
@@ -440,6 +441,8 @@ Added 1 pairs to your cart. Total: 150001 pairs.
 Bot: You've successfully added one more pair of FOOTMONSTER socks to your cart! That's a total of 150,001 pairs now. If you need anything else, I'm here to help!
 ```
 
+**Experiment:** What if you want to let the user *remove* socks from their cart as well, or empty it? What's the minimum possible amount of extra code you need to write?
+
 ### Troubles with small models
 
 If you're using GPT 3.5 or later, this code probably works great for you, and feels totally reliable. But on small 7-or-8-billion parameter models on Ollama, it may often:
@@ -471,14 +474,183 @@ Note that `UsePromptBasedFunctionCalling` is an example in this repo. It's not a
 
 ### Structured output
 
-Go back to your `QuizApp` and change the logic in `SubmitAnswerAsync` so that it uses structured output. Note that it can't just return a single `bool` value, but you could have it generate an instance of some type like:
+Go back to your `QuizApp` and change the logic in `SubmitAnswerAsync` so that it uses structured output.
+
+## Middleware pipelines
+
+One of the main design goals for `IChatClient` is to reuse standard implementations of cross-cutting concerns across all AI service provider implementations.
+
+This is achieved by implementing those cross-cutting concerns as *middleware*. Built-in middleware currently includes:
+
+ * Function invocation
+ * Logging
+ * Open Telemetry
+ * Caching
+
+Any middleware can freely be combined with other middleware and with any underlying AI service provider implementation. So, anyone building an `IChatClient` for a particular LLM backend doesn't need to implement their own version of function invocation, telemetry, etc.
+
+You've already used two types of middleware earlier in this session: `UseLogging` and `UseFunctionInvocation`. Now let's take a look at how the middleware pipeline works and how you can implement custom pipeline steps.
+
+## How the pipeline is built
+
+When you register an `IChatClient` using code like this:
 
 ```cs
-public class AnswerScore
+hostBuilder.Services.AddChatClient(pipeline => pipeline
+    .UseLogging()
+    .UseFunctionInvocation()
+    .UseOpenTelemetry()
+    .Use(innerChatClient));
+```
+
+... that's actually shorthand for something like:
+
+```cs
+hostBuilder.Services.AddSingleton(services =>
 {
-    public bool IsCorrect { get; set; }
-    public required string Explanation { get; set; }
+    // Starting with the inner chat client, wrap in a nested sequence of steps
+    var client0 = innerChatClient;
+    var client1 = new OpenTelemetryChatClient(client0);
+    var client2 = new FunctionInvokingChatClient(client1);
+    var client3 = new LoggingChatClient(client2, someILoggerInstanceFromDI);
+
+    // Return the outer chat client
+    return client3;
+});
+```
+
+*Sidenote: it's actually registered as scoped today, but that's about to change to singleton*
+
+So as you can see, the pipeline is a sequence of `IChatClient` instances, each of which holds a reference to the next one in the chain, until the final "inner" chat client (which is usually one that calls an external AI service over the network).
+
+When there's a call, e.g., to `CompleteAsync`, this starts with the outer `IChatClient` which typically does something and passes the call through to the next in the chain, and this repeats all the way through to the end.
+
+### What's the point of all this?
+
+Middleware pipelines are an extremely flexible way to reuse logic. Each step in the chain can do any of the following:
+
+ * Just pass the call through to the next `IChatClient` (default behavior)
+ * Modify any of the parameters, such as adding extra prompts to the chat history (a.k.a. "prompt augmentation"), or mutating or replacing the `ChatOptions`
+ * Return a result directly without calling the next in the chain (e.g., if resolving from a cache)
+ * Delay before calling the next in the chain (e.g., for rate limiting)
+ * And either **before** or **after** the next entry in the chain:
+   * Trigger some side-effect, e.g., logging or emitting telemetry data about the input or output
+   * Throw to reject the input/output
+
+## Build custom middleware
+
+We'll create some simple middleware that causes the LLM's response to come back in a different language than usual. This will be an example of *prompt augmentation*.
+
+Start by defining a class like this:
+
+```cs
+public static class UseLanguageStep
+{
+    // This is an extension method that lets you add UseLanguageChatClient into a pipeline
+    public static ChatClientBuilder UseLanguage(this ChatClientBuilder builder, string language)
+    {
+        return builder.Use(inner => new UseLanguageChatClient(inner, language));
+    }
+
+    // This is the actual middleware implementation
+    private class UseLanguageChatClient(IChatClient next, string language) : DelegatingChatClient(next)
+    {
+        // TODO: Override CompleteAsync
+    }
 }
 ```
 
-# TODO: Add a section about middleware, both built-in and custom
+As you can see, it comes in two parts:
+
+ * The actual implementation, which typically is a class derived from `DelegatingChatClient`. Use of that base class is optional (you can implement `IChatClient` directly if you prefer) but simplifies things by automatically passing through any calls to the next item in the pipeline.
+ * An extension method on `ChatClientBuilder` that makes it easy to register into a pipeline.
+
+Now to implement the logic, replace the `TODO: Override CompleteAsync` comment with an implementation, e.g.:
+
+```cs
+public override async Task<ChatCompletion> CompleteAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+{
+    // Add an extra prompt
+    var promptAugmentation = new ChatMessage(ChatRole.User, $"Always reply in the language {language}");
+    chatMessages.Add(promptAugmentation);
+
+    try
+    {
+        // Pass through to rest of pipeline
+        return await base.CompleteAsync(chatMessages, options, cancellationToken);
+    }
+    finally
+    {
+        // Clean up
+        chatMessages.Remove(promptAugmentation);
+    }
+}
+```
+
+The "clean up" phase here is optional. Doing this means the caller's chat history (i.e., their `List<ChatMessage>`) won't include the *Always reply in language...* message after the call completes. Normally it's good for prompt augmentation *not* to leave behind modifications to the chat history, but there may be cases where you do want to.
+
+Now to use this, update your `AddChatClient` near the top of `Program.cs`:
+
+```cs
+hostBuilder.Services.AddChatClient(pipeline => pipeline
+    .UseLanguage("Welsh")
+    .UseFunctionInvocation()
+    .Use(innerChatClient));
+```
+
+Now even if you talk to it in English, you should get back a reply in Welsh:
+
+```
+You: Hello there!
+Bot: Helo! Sut gallaf eich helpu heddiw? Peidiwch â cholli'r cyfle i brynu sgarffiau FOOTMONSTER sydd ar gael ar gynnig!
+```
+
+Things like function calling should continue to work the same.
+
+Note that your `UseLanguage` middleware does **not** currently take effect for `CompleteStreamingAsync` calls, because you didn't override that method. It's not very hard to do this if you want.
+
+## Optional: Build a rate-limiting middleware step
+
+You're not limited to prompt augmentation. You can use arbitrary logic to decide if, when, and how to call through to the next step in the pipeline.
+
+Can you build a middleware step that is used as follows?
+
+```cs
+hostBuilder.Services.AddChatClient(pipeline => pipeline
+    .UseLanguage("Welsh")
+    .UseRateLimit(TimeSpan.FromSeconds(5))
+    .UseFunctionInvocation()
+    .Use(innerChatClient));
+```
+
+... and delays any incoming call so the user can't make more than one request every 5 seconds?
+
+> [!TIP]
+> Start by adding a package reference to `System.Threading.RateLimiting`.
+
+Expand the section below for a possible solution.
+
+<details>
+<summary>SOLUTION</summary>
+
+```cs
+public static class UseRateLimitStep
+{
+    public static ChatClientBuilder UseRateLimit(this ChatClientBuilder builder, TimeSpan window)
+        => builder.Use(inner => new RateLimitedChatClient(inner, window));
+
+    private class RateLimitedChatClient(IChatClient inner, TimeSpan window) : DelegatingChatClient(inner)
+    {
+        RateLimiter rateLimit = new FixedWindowRateLimiter(new() { Window = window, QueueLimit = 1, PermitLimit = 1 });
+
+        public override async Task<ChatCompletion> CompleteAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            using var lease = await rateLimit.AcquireAsync(cancellationToken: cancellationToken);
+            return await base.CompleteAsync(chatMessages, options, cancellationToken);
+        }
+    }
+}
+```
+</details>
+
+And what if, instead of making the user wait until the 5 seconds has elapsed, you wanted to bail out and return a message like `"Sorry, I'm too busy - please ask again later"`?
