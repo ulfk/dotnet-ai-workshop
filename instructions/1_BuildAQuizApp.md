@@ -273,6 +273,9 @@ var prompt = $"""
     """;
 ```
 
-Does this block all the attacks?
+Does this block all the attacks? Are there any other [techniques](https://learnprompting.org/docs/prompt_hacking/defensive_measures/introduction) that help?
 
-Does it help if, instead of just constructing one big string, you construct a `List<ChatMessage>` (with the user's input in a separate message from the system prompt) and pass that to `CompleteAsync`?
+The good news is that:
+
+ 1. In practice, a layered approach that combines multiple defensive measures does in fact end up being fairly resilient.
+ 2. Better still, for the great majority of business use cases that we'll look at throughout this workshop, the user has no incentive to subvert the system and wouldn't cause any issues if they did. In most cases the worst a user can do is inconvenience themselves by causing incorrect output. AI systems are not normally a trust boundary!
