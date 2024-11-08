@@ -622,7 +622,7 @@ A well-known one is [RAG Triad](https://truera.com/ai-quality-education/generati
 
 Philosophically, this is along the same lines as the concept of [justified true belief](https://en.wikipedia.org/wiki/Definitions_of_knowledge#Justified_true_belief), a definition of "knowledge" that has been around since at least Socrates. We don't just want the assistant to make true statements; we also want its statements to have a valid justification. We want its claims to be *knowledge*.
 
-We can measure something like this. It's not precisely conforming to the original definition of RAG triad, but is quite possibly more useful, since our eval dataset has the advantage of a known ground truth. Replace the one score:
+We can measure something like this. It's not precisely conforming to the original definition of RAG triad - and we'll discuss that later - but is quite possibly more useful, since our eval dataset has the advantage of a known ground truth. Replace the one score:
 
 ```cs
 var runningAverageTotal = 0.0;
@@ -711,4 +711,40 @@ Now you'll be able to see all three scores as it evaluates.
 
 **Caution**: Here the "groundedness" calculation is based only on the chosen citation. This is a rough approximation. For a better implementation you should include *all* the supplied manual chunks in the `<context></context>`. For example, change `AnswerAsync` to return `Task<(string Text, Citation? Citation, string AllContext)>`.
 
-## TODO: Add a section about RAG Triad when you don't know any ground truth. Just replace `AnswerCorrectness` with `AnswerHelpfulness` which assesses whether the given answer seems helpful for the question. Then none of the assessments use `<truth>` and it can be removed. This is closer to the original definition of RAG Triad and lets you score real user inputs in production (in realtime or afterwards). Exercise: are the scores still as relevant?
+### The regular version of RAG triad
+
+What we've done above is slightly different to the original and more common definition of RAG triad. In the [original definition](https://www.trulens.org/getting_started/core_concepts/rag_triad/), evaluation is performed without any "ground truth" to compare against.
+
+How is that possible? Well, you're almost doing it already. The code above produces three measures:
+
+1. Context relevance: given **question**, assesses **context**
+   - i.e., does **context** contain information relevant to **question**
+2. Answer groundedness: given **context**, assesses **answer**
+   - i.e., are the factual claims in **answer** based only on the facts given in **context**?
+3. Answer truthfulness: given **truth**, assesses **answer**
+   - i.e., are the factual claims in **answer** equivalent to the facts given in **truth**?
+
+So, only one of the three even uses "truth"! You could redefine the third measure without "truth" as:
+
+3. Answer helpfulness: given **question**, assess **answer**
+   - i.e., does **answer** appear superficially to be helpful for **question** (ignoring whether or not it's factually correct)
+
+Now if all three scores are good, it's probably a good answer, because we know it appears to address the question (score 3), and it's based entirely on some facts (score 2) that are relevant to that question (score 1).
+
+<details>
+<summary>SIDENOTE: Why score 3 is even needed</summary>
+
+As for why score 3 is even needed here, consider this example:
+
+* **Question**: Why is the sky blue?
+* **Context**: "Chapter 3: Rayleigh Scattering. When sunlight passes through the Earth's atmosphere, it is scattered by air molecules, and blue wavelengths are more scattered than other colors".
+* **Answer**: Sunlight passes through the Earth's atmosphere.
+
+Score 1 is good (the context is relevant). Score 2 is good (the answer is based completely on context). But score 3 is bad, because it's not actually saying anything about colors.
+</details>
+
+You can use this kind of evaluation in production based on real questions that users actually ask, not just based on a test dataset. You can do so either in realtime, or afterwards as an occasional batch process.
+
+It likely isn't quite as precise as if you do have ground truth to compare against, but in the real world, ground truth is a luxury you often don't have.
+
+**Optional exercise**: Update your evaluation code to work this way. To what extent do you find its scores are still helpful for making decisions, e.g., for trying out different prompts or retrieval logic?
