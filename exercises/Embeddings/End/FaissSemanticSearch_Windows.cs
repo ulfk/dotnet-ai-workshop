@@ -28,10 +28,10 @@ public class FaissSemanticSearch_Windows
             var input = Console.ReadLine()!;
             if (input == "") break;
 
-            var inputEmbedding = (await EmbeddingGenerator.GenerateAsync(input))[0];
+            var inputEmbedding = await EmbeddingGenerator.GenerateEmbeddingVectorAsync(input);
             var sw = new Stopwatch();
             sw.Start();
-            var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.Vector.ToArray(), 3);
+            var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.ToArray(), 3);
             sw.Stop();
             for (var i = 0; i < resultDistances.Length; i++)
             {

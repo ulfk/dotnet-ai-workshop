@@ -31,10 +31,10 @@ public class FaissSemanticSearch_MacLinux
             var input = Console.ReadLine()!;
             if (input == "") break;
 
-            var inputEmbedding = (await EmbeddingGenerator.GenerateAsync(input))[0];
+            var inputEmbedding = await EmbeddingGenerator.GenerateEmbeddingVectorAsync(input);
             var sw = new Stopwatch();
             sw.Start();
-            var closest = index.Search(inputEmbedding.Vector.ToArray(), 3).ToList();
+            var closest = index.Search(inputEmbedding.ToArray(), 3).ToList();
             sw.Stop();
             foreach (var result in closest)
             {

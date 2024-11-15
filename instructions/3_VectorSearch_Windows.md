@@ -72,8 +72,8 @@ while (true)
     var input = Console.ReadLine()!;
     if (input == "") break;
 
-    var inputEmbedding = (await EmbeddingGenerator.GenerateAsync(input))[0];
-    var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.Vector.ToArray(), 3);
+    var inputEmbedding = await EmbeddingGenerator.GenerateEmbeddingVectorAsync(input);
+    var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.ToArray(), 3);
     for (var i = 0; i < resultDistances.Length; i++)
     {
         var distance = resultDistances[i];
@@ -119,7 +119,7 @@ You can set up a proper benchmark if you want, but the following use of `Stopwat
 ```cs
 var sw = new Stopwatch();
 sw.Start();
-var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.Vector.ToArray(), 3);
+var (resultDistances, resultIds) = index.SearchFlat(1, inputEmbedding.ToArray(), 3);
 sw.Stop();
 ```
 
