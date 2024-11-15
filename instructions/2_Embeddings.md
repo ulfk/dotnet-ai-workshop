@@ -166,6 +166,35 @@ Verify you can use this instead of `TensorPrimitives.CosineSimilarity` and still
 
 If you're really keen, have a go at vectorizing it (e.g., using `Vector256.Multiply`). There's a solution in `exercises/Embeddings/End`. Is it faster than your unvectorized version? How does the speed compare with `TensorPrimitives.CosineSimilarity`?
 
+## Optional: Zero-shot classification
+
+*Zero-shot classifiers* are given some input text and a set of candidate labels, and are asked to identify the most relevant label. They can be used to automate workflows or suggest categorization or actions in an app UI. The term "zero-shot" refers to the fact that you're asking it to classify into labels that it wasn't specifically trained to identify.
+
+How well does your embedding model work as a zero-shot classifier? Try to implement a zero-shot classification method with this signature:
+
+```cs
+/// <summary>
+/// Returns the most relevant candidate label.
+/// </summary>
+public static async Task<string> ClassifyAsync(string text, IEnumerable<string> candidateLabels)
+{
+    // TODO: Implement it
+}
+```
+
+Example test cases:
+
+ * Given the candidates *Animals*, *Programming*, and *Music*:
+   * *This is a Burmese Python* should give *Animals*
+   * *This is a Python API* should give *Programming*
+   * *This is my song about pythons* should give *Music*
+ * Given the candidates *Help*, *Complaint*, and *Returns*:
+   * *How can I reset my password?* should give *Help*
+   * *I am unhappy with your service and demand a refund* should give *Complaint*
+   * *I am sending this item back to you* should give *Returns*
+
+To be clear, embedding models are not really trained for this use case, so don't expect it to do as well as a [proper zero-shot classification model](https://huggingface.co/models?pipeline_tag=zero-shot-classification&sort=trending).
+
 ## Optional: Semantic opposites
 
 If embedding similarity is measured from -1 to +1, what are the most semantically different two strings you can find? Can you find any string pair whose similarity is close to -1? What about two opposite-meaning statements?
