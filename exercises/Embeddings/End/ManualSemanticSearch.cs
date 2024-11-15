@@ -11,16 +11,8 @@ public class ManualSemanticSearch
             new OllamaEmbeddingGenerator(new Uri("http://127.0.0.1:11434"), modelId: "all-minilm");
 
         // Create embeddings for all the test data
-        var embeddingsResult = await embeddingGenerator.GenerateAsync(TestData.DocumentTitles.Values);
-        Console.WriteLine($"Computed {embeddingsResult.Count} embeddings");
-
-        // Can also be done with .Zip, but is less obvious
-        var docInfoWithEmbeddings = TestData.DocumentTitles.Select((docTitle, index) => new
-        {
-            Id = docTitle.Key,
-            Text = docTitle.Value,
-            Embedding = embeddingsResult[index].Vector,
-        }).ToList();
+        var titlesWithEmbeddings = await embeddingGenerator.GenerateAndZipAsync(TestData.DocumentTitles.Values);
+        Console.WriteLine($"Got {titlesWithEmbeddings.Length} title-embedding pairs");
 
         while (true)
         {
@@ -28,17 +20,18 @@ public class ManualSemanticSearch
             var input = Console.ReadLine()!;
             if (input == "") break;
 
-            var inputEmbedding = (await embeddingGenerator.GenerateAsync(input))[0];
+            var inputEmbedding = await embeddingGenerator.GenerateEmbeddingVectorAsync(input);
+
             var closest =
-                from candidate in docInfoWithEmbeddings
+                from candidate in titlesWithEmbeddings
                 let similarity = TensorPrimitives.CosineSimilarity(
-                    candidate.Embedding.Span, inputEmbedding.Vector.Span)
+                    candidate.Embedding.Vector.Span, inputEmbedding.Span)
                 orderby similarity descending
-                select new { candidate.Text, Similarity = similarity };
+                select new { candidate.Value, Similarity = similarity };
 
             foreach (var result in closest.Take(3))
             {
-                Console.WriteLine($"({result.Similarity:F2}): {result.Text}");
+                Console.WriteLine($"({result.Similarity:F2}): {result.Value}");
             }
         }
     }

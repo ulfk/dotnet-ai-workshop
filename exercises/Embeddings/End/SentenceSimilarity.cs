@@ -13,19 +13,18 @@ public class SentenceSimilarity
             new OllamaEmbeddingGenerator(new Uri("http://127.0.0.1:11434"), modelId: "all-minilm");
 
         // 1: Just generate an embedding
-        var embedding = await embeddingGenerator.GenerateAsync("Hello, world!");
-        Console.WriteLine($"Embedding dimensions: {embedding[0].Vector.Span.Length}");
-        foreach (var value in embedding[0].Vector.Span)
+        var embedding = await embeddingGenerator.GenerateEmbeddingVectorAsync("Hello, world!");
+        Console.WriteLine($"Embedding dimensions: {embedding.Span.Length}");
+        foreach (var value in embedding.Span)
         {
             Console.Write("{0:0.00}, ", value);
         }
 
         // 2: Compute and compare embeddings
-        var catVector = (await embeddingGenerator.GenerateAsync("cat"))[0].Vector;
-        var dogVector = (await embeddingGenerator.GenerateAsync("dog"))[0].Vector;
-        var kittenVector = (await embeddingGenerator.GenerateAsync("kitten"))[0].Vector;
+        var catVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("cat");
+        var dogVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("dog");
+        var kittenVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("kitten");
 
-        Console.WriteLine($"Dimensions: {catVector.Span.Length}");
         Console.WriteLine($"Cat-dog similarity: {TensorPrimitives.CosineSimilarity(catVector.Span, dogVector.Span):F2}");
         Console.WriteLine($"Cat-kitten similarity: {TensorPrimitives.CosineSimilarity(catVector.Span, kittenVector.Span):F2}");
         Console.WriteLine($"Dog-kitten similarity: {TensorPrimitives.CosineSimilarity(dogVector.Span, kittenVector.Span):F2}");

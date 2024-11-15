@@ -37,13 +37,12 @@ Leave `SentenceSimilarity` uncommented, because that's where we'll start.
 Open `SentenceSimilarity.cs`. First check you can generate an embedding for some text. Add this at the bottom of the `RunAsync` method:
 
 ```cs
-var embedding = await embeddingGenerator.GenerateAsync("Hello, world!");
-Console.WriteLine($"Embedding dimensions: {embedding[0].Vector.Span.Length}");
-foreach (var value in embedding[0].Vector.Span)
+var embedding = await embeddingGenerator.GenerateEmbeddingVectorAsync("Hello, world!");
+Console.WriteLine($"Embedding dimensions: {embedding.Span.Length}");
+foreach (var value in embedding.Span)
 {
     Console.Write("{0:0.00}, ", value);
 }
-Console.WriteLine();
 ```
 
 If you run this, you should see it produces a vector of length 384. It's a *normalized* vector (i.e., the sum of its squares adds to 1) so it represents a direction in 384-dimensional space. Any sentence that has similar meaning will be in a similar direction, and vice-versa.
@@ -57,9 +56,9 @@ The most commonly used is *cosine similarity*, which gives a number from -1 to 1
 Compute similarity over a few strings as follows:
 
 ```cs
-var catVector = (await embeddingGenerator.GenerateAsync("cat"))[0].Vector;
-var dogVector = (await embeddingGenerator.GenerateAsync("dog"))[0].Vector;
-var kittenVector = (await embeddingGenerator.GenerateAsync("kitten"))[0].Vector;
+var catVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("cat");
+var dogVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("dog");
+var kittenVector = await embeddingGenerator.GenerateEmbeddingVectorAsync("kitten");
 
 Console.WriteLine($"Cat-dog similarity: {TensorPrimitives.CosineSimilarity(catVector.Span, dogVector.Span):F2}");
 Console.WriteLine($"Cat-kitten similarity: {TensorPrimitives.CosineSimilarity(catVector.Span, kittenVector.Span):F2}");
@@ -77,24 +76,13 @@ Back in `Program.cs`, comment out the line for `SentenceSimilarity` and uncommen
 Now, in `ManualSemanticSearch.cs`, at the bottom of `RunAsync`, add:
 
 ```cs
-var embeddingsResult = await embeddingGenerator.GenerateAsync(TestData.DocumentTitles.Values);
+var titlesWithEmbeddings = await embeddingGenerator.GenerateAndZipAsync(TestData.DocumentTitles.Values);
+Console.WriteLine($"Got {titlesWithEmbeddings.Length} title-embedding pairs");
 ```
 
-`TestData.DocumentTitles` is the dictionary of HR document titles, and `embeddingsResult` is a list of their embeddings. Let's bring these together into a single data structure holding titles and corresponding embeddings:
+`TestData.DocumentTitles` is the dictionary of HR document titles, and `titlesWithEmbeddings` is now an array of `(text, embedding)` pairs. `GenerateAndZipAsync` is equivalent to generating embeddings for all the inputs and then using `.Zip` to combine them with all the inputs.
 
-```cs
-// Can also be done with .Zip, but is less obvious
-var docInfoWithEmbeddings = TestData.DocumentTitles.Select((docTitle, index) => new
-{
-    Id = docTitle.Key,
-    Text = docTitle.Value,
-    Embedding = embeddingsResult[index].Vector,
-}).ToList();
-Console.WriteLine($"Got {docInfoWithEmbeddings.Count} title-embedding pairs");
-```
-
-
-If you want to see what you just did, set a breakpoint on the `Console.WriteLine` line and inspect `docInfoWithEmbeddings`.
+Verify this by setting a breakpoint after the line above and using the debugger to inspect the value of `embeddingsResult`.
 
 Next let's implement a search REPL:
 
@@ -112,18 +100,18 @@ while (true)
 Replace the `TODO` comment with the following. First compute the embedding of the current `input`:
 
 ```cs
-var inputEmbedding = (await embeddingGenerator.GenerateAsync(input))[0];
+var inputEmbedding = await embeddingGenerator.GenerateEmbeddingVectorAsync(input);
 ```
 
-And now loop over all the `docInfoWithEmbeddings` candidates. For each one, compute the similarity to the search term, and  order by similarity descending:
+And now loop over all the `titlesWithEmbeddings` candidates. For each one, compute the similarity to the search term, and order by similarity descending:
 
 ```cs
 var closest =
-    from candidate in docInfoWithEmbeddings
+    from candidate in titlesWithEmbeddings
     let similarity = TensorPrimitives.CosineSimilarity(
-        candidate.Embedding.Span, inputEmbedding.Vector.Span)
+        candidate.Embedding.Vector.Span, inputEmbedding.Span)
     orderby similarity descending
-    select new { candidate.Text, Similarity = similarity };
+    select new { candidate.Value, Similarity = similarity };
 ```
 
 Yes, it's LINQ query syntax! You don't see it a lot these days but it looks nice for something like this. If you want to re-express that with a load of `.Select` and lambdas, go for it. (But what a waste of time.)
@@ -133,7 +121,7 @@ Finally, display the closest three:
 ```cs
 foreach (var result in closest.Take(3))
 {
-    Console.WriteLine($"({result.Similarity:F2}): {result.Text}");
+    Console.WriteLine($"({result.Similarity:F2}): {result.Value}");
 }
 ```
 
