@@ -9,7 +9,7 @@ This starter exercise aims to get you started with using an LLM immediately. We 
 The two easiest options are:
 
  * **OpenAI** or **AzureOpenAI**. If you have an Azure account:
-   * Open the portal and choose "Create a Resource"
+   * For Azure, open the [Azure Portal](https://portal.azure.com) and choose "Create a Resource"
    * Search for `openai` and choose "Azure OpenAI", then click "Create"
    * Pick [a region that supports the model(s) you want to use](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models). For best results you'll use `gpt-4o-mini`, so any of `eastus`, `eastus2`, `westus`, or `swedencentral` are good choices.
    * Continue accepting defaults until it's deployed. Deployment will take a few minutes.
