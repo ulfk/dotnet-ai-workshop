@@ -7,6 +7,8 @@
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>CS1998;$(NoWarn)</NoWarn>
+    <UseFaissNet Condition="'$(OS)' == 'Windows_NT'">true</UseFaissNet>
+    <DefineConstants Condition="'$(UseFaissNet)' == 'true'">$(DefineConstants);USE_FAISS_NET</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,8 +27,8 @@
       In a real app you'd likely use an external vector DB which in most cases wraps Faiss. In this workshop
       it's educational to use the underlying library directly.
     -->
-    <PackageReference Include="FaissMask" />
-    <PackageReference Include="FaissNet" />
+    <PackageReference Include="FaissMask" Condition="'$(UseFaissNet)' != 'true'" />
+    <PackageReference Include="FaissNet" Condition="'$(UseFaissNet)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>

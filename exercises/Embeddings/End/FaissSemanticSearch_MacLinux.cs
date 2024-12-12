@@ -1,4 +1,5 @@
-﻿// Note: On Linux, first "sudo apt-get install libopenblas-dev"
+﻿#if !USE_FAISS_NET
+// Note: On Linux, first "sudo apt-get install libopenblas-dev"
 
 using System.Diagnostics;
 using Microsoft.Extensions.AI;
@@ -65,3 +66,5 @@ public class FaissSemanticSearch_MacLinux
         return index;
     }
 }
+
+#endif // !USE_FAISS_NET

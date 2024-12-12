@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿#if USE_FAISS_NET
+using System.Diagnostics;
 using Microsoft.Extensions.AI;
 namespace Embeddings;
 
@@ -84,3 +85,5 @@ public class FaissSemanticSearch_Windows
 //   require you to make decisions yourself.
 // - If you use OllamaEmbeddingGenerator and try out different embedding models, do the bigger ones produce higher-quality results?
 //   You'll probably need to reduce TestDataSetSize otherwise it will take a long time to generate all the embeddings.
+
+#endif // USE_FAISS_NET
