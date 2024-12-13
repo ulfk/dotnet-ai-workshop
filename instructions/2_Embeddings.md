@@ -20,6 +20,8 @@ ollama pull all-minilm
 ollama serve
 ```
 
+If you get an error like *Error: listen tcp 127.0.0.1:11434: Only one usage of each socket address ... is normally permitted* that just means it's already running. Check your system tray or task bar and quit the existing instance before `ollama serve`.
+
 ## Open the project
 
 Open the project `exercises/Embeddings/Begin`.
@@ -82,9 +84,9 @@ Console.WriteLine($"Got {titlesWithEmbeddings.Length} title-embedding pairs");
 
 `TestData.DocumentTitles` is the dictionary of HR document titles, and `titlesWithEmbeddings` is now an array of `(text, embedding)` pairs. `GenerateAndZipAsync` is equivalent to generating embeddings for all the inputs and then using `.Zip` to combine them with all the inputs.
 
-Verify this by setting a breakpoint after the line above and using the debugger to inspect the value of `embeddingsResult`.
+Verify this by setting a breakpoint after the line above and using the debugger to inspect the value of `titlesWithEmbeddings`.
 
-Next let's implement a search REPL:
+Next let's implement a search REPL. Add this after the previous code:
 
 ```cs
 while (true)
