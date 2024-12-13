@@ -211,6 +211,6 @@ This is a bit of a trick question so don't spend too long on it. Just give it a 
   Almost any pair of meaningful sentences you enter will have some positive "similarity" score, since they have more in common than you might think, e.g.:
 
    * "Opposite" statements tend to be very similar, as they refer to similar concepts. For example "*Ben will go to your party*" and "*Ben will not go to your party*" are extremely similar, as they are both statements about Ben, your party, and whether someone will do something.
-     * This hints towards prompt engineering can be difficult. Telling an LLM *not* to do something often makes it more likely to do that thing, since you've placed the idea in its context window.
-   * Seemingly-urelated strings like "*7 is a prime number*" and "*where did you put my hat?*" have many points in common, e.g., they are both written in English, are of similar lengths, are both correctly spelled, both sound like lines of dialog, etc.
+     * This hints at one reason why prompt engineering can be difficult. Telling an LLM *not* to say something often makes it more likely to say that thing, since you've placed the idea in its context window.
+   * Seemingly-urelated sentences like "*7 is a prime number*" and "*where did you put my hat?*" have many points in common, e.g., they are both written in English, are of similar lengths, are both correctly spelled, both sound like lines of dialog, etc.
 </details>
