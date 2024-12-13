@@ -4,4 +4,5 @@
 
 await new SentenceSimilarity().RunAsync();
 //await new ManualSemanticSearch().RunAsync();
+//await new ZeroShotClassifier().RunAsync();
 //await new FaissSemanticSearch().RunAsync();

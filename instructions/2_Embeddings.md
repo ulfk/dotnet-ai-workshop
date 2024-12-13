@@ -178,7 +178,7 @@ How well does your embedding model work as a zero-shot classifier? Try to implem
 /// <summary>
 /// Returns the most relevant candidate label.
 /// </summary>
-public static async Task<string> ClassifyAsync(string text, IEnumerable<string> candidateLabels)
+public async Task<string> ClassifyAsync(string text, IEnumerable<string> candidateLabels)
 {
     // TODO: Implement it
 }
@@ -197,6 +197,20 @@ Example test cases:
 
 To be clear, embedding models are not really trained for this use case, so don't expect it to do as well as a [proper zero-shot classification model](https://huggingface.co/models?pipeline_tag=zero-shot-classification&sort=trending).
 
+You can find a solution in `exercises/Embeddings/End/ZeroShotClassification.cs`.
+
 ## Optional: Semantic opposites
 
 If embedding similarity is measured from -1 to +1, what are the most semantically different two strings you can find? Can you find any string pair whose similarity is close to -1? What about two opposite-meaning statements?
+
+This is a bit of a trick question so don't spend too long on it. Just give it a quick go if you can.
+
+<details>
+  <summary>SOLUTION</summary>
+
+  Almost any pair of meaningful sentences you enter will have some positive "similarity" score, since they have more in common than you might think, e.g.:
+
+   * "Opposite" statements tend to be very similar, as they refer to similar concepts. For example "*Ben will go to your party*" and "*Ben will not go to your party*" are extremely similar, as they are both statements about Ben, your party, and whether someone will do something.
+     * This hints towards prompt engineering can be difficult. Telling an LLM *not* to do something often makes it more likely to do that thing, since you've placed the idea in its context window.
+   * Seemingly-urelated strings like "*7 is a prime number*" and "*where did you put my hat?*" have many points in common, e.g., they are both written in English, are of similar lengths, are both correctly spelled, both sound like lines of dialog, etc.
+</details>
