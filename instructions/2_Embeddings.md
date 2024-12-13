@@ -201,7 +201,7 @@ You can find a solution in `exercises/Embeddings/End/ZeroShotClassification.cs`.
 
 ## Optional: Semantic opposites
 
-If embedding similarity is measured from -1 to +1, what are the most semantically different two strings you can find? Can you find any string pair whose similarity is close to -1? What about two opposite-meaning statements?
+If cosine similarity is measured from -1 to +1, what are the most semantically different two strings you can find? Can you find any string pair whose cosine similarity is close to -1? What about two opposite-meaning statements?
 
 This is a bit of a trick question so don't spend too long on it. Just give it a quick go if you can.
 
