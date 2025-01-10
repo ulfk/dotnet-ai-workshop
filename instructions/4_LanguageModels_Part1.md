@@ -256,6 +256,49 @@ Most business-process automation will use structured output. Examples:
 
 Go back to your `QuizApp` from [session 1](./1_BuildAQuizApp.md) and change the logic in `SubmitAnswerAsync` so that it uses structured output.
 
+<details>
+<summary>SOLUTION</summary>
+
+In `Components/Pages/Quiz.razor.cs`, in `SubmitAnswerAsync`, you can remove the following text from the prompt:
+
+```
+Your response must start with CORRECT: or INCORRECT:
+followed by an explanation or another remark about the question.
+Examples: CORRECT: And did you know, Jupiter is made of gas?
+            INCORRECT: The Riemann hypothesis is still unsolved.
+```
+
+To replace it, define a result type at the end of the class:
+
+```cs
+private record MarkingResult(bool IsCorrect, string Explanation);
+```
+
+... and then edit `SubmitAnswerAsync`'s call to `CompleteAsync` so it looks like the following:
+
+```cs
+var response = await chatClient.CompleteAsync<MarkingResult>(prompt);
+if (response.TryGetResult(out var result))
+{
+    if (result.IsCorrect)
+    {
+        pointsScored++;
+        currentQuestionOutcome = $"Well done! {result.Explanation}";
+    }
+    else
+    {
+        currentQuestionOutcome = $"Sorry, that's wrong. {result.Explanation}";
+    }
+}
+else
+{
+    currentQuestionOutcome = "ERROR";
+}
+```
+
+Once again, if you're using Ollama and it's not producing a valid JSON response, you can update the prompt further to give an example of the JSON shape you're asking for.
+</details>
+
 ### Classification
 
 Business applications often need to classify unstructured inputs, for example to automate workflows, triggering different behaviors depending on what some text or image seems to contain or be about. In fact you just did this above: the "property details" example classified inputs as "Sale" or "Rental".
