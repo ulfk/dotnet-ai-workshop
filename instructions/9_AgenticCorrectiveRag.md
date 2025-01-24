@@ -257,6 +257,20 @@ private async Task<string> SearchWeb(
     CancellationToken cancellationToken = default)
 {
     var results = await searchTool!.SearchWebAsync(userQuestion, 3, cancellationToken);
+
+    foreach (SearchResult searchResult in results)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"""
+                            Corrective step using data from :{searchResult.Url}
+                            Web Search: {userQuestion}
+                            
+                            Preview:
+                            {searchResult.Snippet.Substring(0, Math.Min(100, searchResult.Snippet.Length))}....
+                            
+                            """);
+    }
+
     return string.Join("\n", results.Select(c => $"""
         ## web page: {c.Url}
         # Content
@@ -277,7 +291,7 @@ Immediately **before** that comment, add the following block of code. It's a big
 
 ```cs
 // Corrective RAG
-if (chunksForResponseGeneration.Count < 2 || averageScore < 0.7)
+if (chunksForResponseGeneration.Count == 0 || averageScore < 0.7)
 {
     var planGenerator = new PlanGenerator(chatClient);
     var toolCallingClient = new FunctionInvokingChatClient(chatClient);
@@ -286,25 +300,32 @@ if (chunksForResponseGeneration.Count < 2 || averageScore < 0.7)
     var evaluator = new PlanEvaluator(chatClient);
 
     string task = $"""
-            Given the <user_question>, search the product manuals for relevant information.
-            Look for information that may answer the question, and provide a response based on that information.
-            The <context> was not enough to answer the question. Find the information that can complement the context to address the user question
+                    Given the <user_question>, search the product manuals for relevant information.
+                    Look for information that may answer the question, and provide a response based on that information.
+                    The <context> was not enough to answer the question. Find the information that can complement the context to address the user question.
+                    
+                    Take into account the user is enquiring about 
+                    ProductId: ${currentProduct.ProductId}
+                    Brand: ${currentProduct.Brand}
+                    Model: ${currentProduct.Model}
+                    Description: ${currentProduct.Description}
 
-            <user_question>
-            {userMessage}
-            </user_question>
+                    <user_question>
+                    {userMessage}
+                    </user_question>
 
-            <context>
-            {string.Join("\n", closestChunksById.Values.Select(c => $"<manual_extract id='{c.Id}'>{c.Text}</manual_extract>"))}
-            </context>
+                    <context>
+                    {string.Join("\n", closestChunksById.Values.Select(c => $"<manual_extract id='{c.Id}'>{c.Text}</manual_extract>"))}
+                    </context>
             """;
 
     List<PlanStepExecutionResult> pastSteps = [];
     var plan = await planGenerator.GeneratePlanAsync(task, cancellationToken);
     var options = new ChatOptions { Tools = [AIFunctionFactory.Create(SearchWeb)] };
-
-    while (true)
+    var maxSteps = plan.Steps.Length * 2;
+    while (maxSteps > 0)
     {
+
         var res = await stepExecutor.ExecutePlanStep(plan, options: options, cancellationToken: cancellationToken);
         pastSteps.Add(res);
 
@@ -312,13 +333,15 @@ if (chunksForResponseGeneration.Count < 2 || averageScore < 0.7)
         if (planOrResult.Plan is not null)
         {
             plan = planOrResult.Plan;
+            maxSteps--;
         }
         else
         {
             // Add the result to context
             if (planOrResult.Result is { } result)
             {
-                var fakeId = chunksForResponseGeneration.Keys.Max() + 1;
+                var maxKey = chunksForResponseGeneration.Count == 0 ? 0 : chunksForResponseGeneration.Keys.Max() ;
+                var fakeId = maxKey + 1;
                 chunksForResponseGeneration[fakeId] = new Chunk(
                     Id: fakeId,
                     Text: result.Outcome,

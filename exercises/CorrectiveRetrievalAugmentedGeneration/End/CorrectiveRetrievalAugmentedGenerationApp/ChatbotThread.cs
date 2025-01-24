@@ -66,7 +66,7 @@ public class ChatbotThread(
         foreach (var retrievedContext in closestChunksById.Values)
         {
             var score = await contextRelevancyEvaluator.EvaluateAsync(userMessage, retrievedContext.Text, cancellationToken);
-            if (score.ContextRelevance!.ScoreNumber > 0.7)
+            if (score.ContextRelevance!.ScoreNumber >= 0.7)
             {
                 averageScore += score.ContextRelevance!.ScoreNumber;
                 chunksForResponseGeneration.Add(retrievedContext.Id, retrievedContext);
@@ -76,7 +76,7 @@ public class ChatbotThread(
         averageScore /= chunksForResponseGeneration.Count;
         // perform corrective retrieval if needed
 
-        if (chunksForResponseGeneration.Count < 2 || averageScore < 0.7)
+        if (chunksForResponseGeneration.Count == 0 || averageScore < 0.7)
         {
             var planGenerator = new PlanGenerator(chatClient);
 
@@ -88,7 +88,13 @@ public class ChatbotThread(
             string task = $"""
                            Given the <user_question>, search the product manuals for relevant information.
                            Look for information that may answer the question, and provide a response based on that information.
-                           The <context> was not enough to answer the question. Find the information that can complement the context to address the user question
+                           The <context> was not enough to answer the question. Find the information that can complement the context to address the user question.
+                           
+                           Take into account the user is enquiring about 
+                           ProductId: ${currentProduct.ProductId}
+                           Brand: ${currentProduct.Brand}
+                           Model: ${currentProduct.Model}
+                           Description: ${currentProduct.Description}
 
                            <user_question>
                            {userMessage}
@@ -111,7 +117,18 @@ public class ChatbotThread(
             async Task<string> SearchTool([Description("The questions we want to answer searching the web")] string userQuestion)
             {
                 var results = await searchTool!.SearchWebAsync(userQuestion, 3, cancellationToken);
-
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" Web Search: {userQuestion}");
+                foreach (SearchResult searchResult in results)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"""
+                                        Corrective step using data from :{searchResult.Url}
+                                        Preview:
+                                            {searchResult.Snippet.Substring(0, Math.Min(100, searchResult.Snippet.Length))}....
+                                      
+                                      """);
+                }
                 return string.Join("\n", results.Select(c => $"""
                                                               ## web page: {c.Url}
                                                               # Content
@@ -130,32 +147,34 @@ public class ChatbotThread(
                 ToolMode = ChatToolMode.Auto
             };
 
-            var res = await stepExecutor.ExecutePlanStep(plan, options: options, cancellationToken: cancellationToken);
-            pastSteps.Add(res);
-
-            var planOrResult = await evaluator.EvaluatePlanAsync(task, plan, pastSteps, cancellationToken);
-
-            while (planOrResult.Plan is not null)
+            var maxSteps = plan.Steps.Length * 2;
+            while (maxSteps > 0)
             {
-                plan = planOrResult.Plan;
-                res = await stepExecutor.ExecutePlanStep(plan, options: options, cancellationToken: cancellationToken);
+                var res = await stepExecutor.ExecutePlanStep(plan, options: options, cancellationToken: cancellationToken);
                 pastSteps.Add(res);
+                maxSteps--;
+                var planOrResult = await evaluator.EvaluatePlanAsync(task, plan, pastSteps, cancellationToken);
+                if (planOrResult.Plan is not null)
+                {
+                    plan = planOrResult.Plan;
+                }
+                else
+                {
+                    // Add the result to context
+                    if (planOrResult.Result is { } result)
+                    {
+                        var maxKey = chunksForResponseGeneration.Count == 0 ? 0 : chunksForResponseGeneration.Keys.Max() ;
+                        var fakeId = maxKey + 1;
+                        chunksForResponseGeneration[fakeId] = new Chunk(
+                            Id: fakeId,
+                            Text: result.Outcome,
+                            ProductId: currentProduct.ProductId,
+                            PageNumber: 1
+                        );
+                    }
 
-                planOrResult = await evaluator.EvaluatePlanAsync(task, plan, pastSteps, cancellationToken);
-            }
-
-            // we add a fake entry to the chunks by id so that we can add the answer to the context
-            ulong maxKey = chunksForResponseGeneration.Count == 0 ? 0 : chunksForResponseGeneration.Keys.Max();
-            ulong key = maxKey + 1;
-            if (planOrResult.Result is not null)
-            {
-                chunksForResponseGeneration[key] = new Chunk(
-
-                    Id: key,
-                    Text: planOrResult.Result.Outcome,
-                    ProductId: currentProduct.ProductId,
-                    PageNumber: 1
-                );
+                    break;
+                }
             }
         }
 
