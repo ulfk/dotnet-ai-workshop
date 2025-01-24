@@ -14,8 +14,8 @@ The two easiest options are:
      * Search for `openai` and choose "Azure OpenAI", then click "Create"
      * Pick [a region that supports the model(s) you want to use](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models). For best results you'll use `gpt-4o-mini`, so any of `eastus`, `eastus2`, `westus`, or `swedencentral` are good choices.
      * Continue accepting defaults until it's deployed. Deployment will take a few minutes.
-     * Go to the deployed resource, then click "Go to Azure OpenAI studio"
-     * In Azure OpenAI Studio, navigate to "Deployments" then click "Deploy Model" -> "Deploy Base Model"
+     * Go to the deployed resource, then click "Go to Azure AI Foundry portal"
+     * In Azure AI Foundry, navigate to "Deployments" then click "Deploy Model" -> "Deploy Base Model"
      * Pick and confirm `gpt-4o-mini`. Other models may work, but different versions of the models have different capabilities.
      * Note that you'll need to come back here in a minute to find your *Endpoint URI* and *Key*.
    * For **OpenAI Platform**,
@@ -104,7 +104,7 @@ In `Program.cs`, see the `TODO` comment block near the top. Replace it with one 
     dotnet user-secrets set "AzureOpenAI:Key" abcdabcdabcdabcd
     ```
 
-    Get both of these values from Azure OpenAI Studio. Notice that for Endpoint, **you're only supplying the part of the URL up the the end of the host**. Don't include `openai/deployments/...` or whatever else appears after it in Azure OpenAI Studio.
+    Get both of these values from Azure AI Foundry portal. Notice that for Endpoint, **you're only supplying the part of the URL up the the end of the host**. Don't include `openai/deployments/...` or whatever else appears after it in Azure AI Foundry portal.
 
  * If you're using OpenAI Platform:
 
