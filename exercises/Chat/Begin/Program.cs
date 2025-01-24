@@ -9,14 +9,20 @@ using System.ClientModel;
 // Set up DI etc
 var hostBuilder = Host.CreateApplicationBuilder(args);
 hostBuilder.Configuration.AddUserSecrets<Program>();
-hostBuilder.Services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+hostBuilder.Services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Trace));
 
 // Register an IChatClient
+// For Azure OpenAI:
 var azureOpenAiConfig = hostBuilder.Configuration.GetRequiredSection("AzureOpenAI");
 var innerChatClient = new AzureOpenAIClient(new Uri(azureOpenAiConfig["Endpoint"]!), new ApiKeyCredential(azureOpenAiConfig["Key"]!))
     .AsChatClient("gpt-4o-mini");
+
+// Or for OpenAI Platform:
+// var openAiConfig = hostBuilder.Configuration.GetRequiredSection("OpenAI");
+// var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", openAiConfig["Key"]!).AsChatClient();
+
 // Or for Ollama:
-//var innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llama3.1");
+// var innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llama3.1");
 
 hostBuilder.Services.AddChatClient(innerChatClient);
 
