@@ -264,3 +264,9 @@ In this case you should be able to do it using an approach like the following:
 The first time you run it like this, it should take the same amount of time as usual, as it's populating the cache. But on subsequent runs, it should complete immediately.
 
 Exercise: how does it differ if you move `UseDistributedCache` to be *after* `UseFunctionInvocation`? You'll have to shut down and restart your Redis instance to find out, to avoid reusing cache entries from before that change. Why does it differ? What use cases are there for each of these two options?
+
+## Advanced challenge
+
+Can you build a web UI that streams video from the webcam, and provides a live caption? Or perhaps a rather questionable authentication system when some action is authorized only when the user holds up a particular secret combination of objects?
+
+Consider starting from the Blazor Server sample at https://github.com/baltermia/blazor-camera-streamer and adding the necessary `Microsoft.Extensions.AI` libraries to connect to your chosen AI service.
