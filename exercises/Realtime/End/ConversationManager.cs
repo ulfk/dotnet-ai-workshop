@@ -93,13 +93,13 @@ public class ConversationManager(RealtimeConversationClient client) : IDisposabl
     public class BookingContext(Func<string, Task> addMessage)
     {
         [Description("Determines whether a table is available on a given date for a given number of people")]
-        public bool CheckTableAvailability(DateOnly date, int numPeople)
+        public async Task<bool> CheckTableAvailability(DateOnly date, int numPeople)
         {
             await addMessage($"Checking table availability for {date}");
             return Random.Shared.NextDouble() < (1.0 / numPeople);
         }
 
-        public async void BookTableAsync(DateOnly date, int numPeople, string customerName)
+        public async Task BookTableAsync(DateOnly date, int numPeople, string customerName)
         {
             await addMessage($"***** Booked table on {date} for {numPeople} people (name: {customerName}).");
         }
