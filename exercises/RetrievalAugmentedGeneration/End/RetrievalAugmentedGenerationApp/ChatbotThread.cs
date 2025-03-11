@@ -71,8 +71,8 @@ public class ChatbotThread(
             """));
 
         var isOllama = chatClient.GetService<OllamaChatClient>() is not null;
-        var response = await chatClient.CompleteAsync<ChatBotAnswer>(_messages, cancellationToken: cancellationToken, useNativeJsonSchema: isOllama);
-        _messages.Add(response.Message);
+        var response = await chatClient.GetResponseAsync<ChatBotAnswer>(_messages, cancellationToken: cancellationToken, useNativeJsonSchema: isOllama);
+        _messages.AddMessages(response);
 
         if (response.TryGetResult(out var answer))
         {
@@ -99,9 +99,9 @@ public class ChatbotThread(
             Respond in plain text with your answer. Where possible, also add a citation to the product manual
             as an XML tag in the form <cite extractId='number' productId='number'>short verbatim quote</cite>.
             """));
-        var response = await chatClient.CompleteAsync(_messages, chatOptions, cancellationToken: cancellationToken);
-        _messages.Add(response.Message);
-        var answer = ParseResponse(response.Message.Text!);
+        var response = await chatClient.GetResponseAsync(_messages, chatOptions, cancellationToken: cancellationToken);
+        _messages.AddMessages(response);
+        var answer = ParseResponse(response.Text);
 
         // If the chatbot gave a citation, convert it to info to show in the UI
         var citation = answer.ManualExtractId.HasValue

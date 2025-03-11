@@ -24,10 +24,10 @@ internal static class ChatBot
             messages.Add(new(ChatRole.User, input));
 
             // Get reply
-            var response = await chatClient.CompleteAsync(messages, chatOptions);
-            messages.Add(response.Message);
+            var response = await chatClient.GetResponseAsync(messages, chatOptions);
+            messages.AddMessages(response);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"Bot: {response.Message.Text}");
+            Console.WriteLine($"Bot: {response.Text}");
         }
     }
 

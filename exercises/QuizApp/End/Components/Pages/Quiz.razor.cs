@@ -47,8 +47,8 @@ public partial class Quiz(IChatClient chatClient) : ComponentBase
             the answer only needs to be a single word or phrase.
             Don't repeat any of the previous questions: {previousQuestions}
             """;
-        var response = await chatClient.CompleteAsync(prompt);
-        currentQuestionText = response.Message.Text;
+        var response = await chatClient.GetResponseAsync(prompt);
+        currentQuestionText = response.Text;
         previousQuestions += currentQuestionText + "\n";
     }
 
@@ -80,8 +80,8 @@ public partial class Quiz(IChatClient chatClient) : ComponentBase
             Examples: CORRECT: And did you know, Jupiter is made of gas?
                       INCORRECT: The Riemann hypothesis is still unsolved.
             """;
-        var response = await chatClient.CompleteAsync(prompt);
-        currentQuestionOutcome = response.Message.Text!;
+        var response = await chatClient.GetResponseAsync(prompt);
+        currentQuestionOutcome = response.Text;
 
         // There's a better way to do this using structured output. We'll get to that later.
         if (currentQuestionOutcome.StartsWith("CORRECT"))

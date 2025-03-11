@@ -46,8 +46,8 @@ foreach (var imagePath in trafficImages)
         Raise an alert only if the camera is broken or if there's something highly unusual or dangerous,
         not just because of traffic volume.
         """);
-    message.Contents.Add(new ImageContent(File.ReadAllBytes(imagePath), "image/jpg"));
-    var response = await chatClient.CompleteAsync<TrafficCamResult>([message], chatOptions, useNativeJsonSchema: isOllama);
+    message.Contents.Add(new DataContent(File.ReadAllBytes(imagePath), "image/jpg"));
+    var response = await chatClient.GetResponseAsync<TrafficCamResult>([message], chatOptions, useNativeJsonSchema: isOllama);
 
     if (response.TryGetResult(out var result))
     {

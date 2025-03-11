@@ -150,8 +150,8 @@ var prompt = $"""
     Reply only with the question and no other text. Ask factual questions for which
     the answer only needs to be a single word or phrase.
     """;
-var response = await chatClient.CompleteAsync(prompt);
-currentQuestionText = response.Message.Text;
+var response = await chatClient.GetResponseAsync(prompt);
+currentQuestionText = response.Text;
 ```
 
 OK, let's try it out! Run the application again, and if all goes well, it will make up a question on your chosen subject.
@@ -178,7 +178,7 @@ var prompt = $"""
     Examples: CORRECT: And did you know, Jupiter is made of gas?
               INCORRECT: The Riemann hypothesis is still unsolved.
     """;
-var response = await chatClient.CompleteAsync(prompt);
+var response = await chatClient.GetResponseAsync(prompt);
 ```
 
 **WARNING:** This is intentionaly bad code for several reasons. We'll come back to fix this later.
@@ -186,7 +186,7 @@ var response = await chatClient.CompleteAsync(prompt);
 Next let's display this in the UI, and award the user a point if they were correct:
 
 ```cs
-currentQuestionOutcome = response.Message.Text!;
+currentQuestionOutcome = response.Text;
 
 // There's a better way to do this using structured output. We'll get to that later.
 if (currentQuestionOutcome.StartsWith("CORRECT"))
