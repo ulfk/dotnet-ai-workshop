@@ -10,7 +10,7 @@ This session is **part one of two** about language models. In the [second part](
 
 Start by opening the project `exercises/Chat/Begin`. Near the top, find the variable `innerChatClient` and update its value according to the LLM service you wish to use.
 
-* For Azure OpenAI, you should have code like this:
+* For GitHub Models or Azure OpenAI, you should have code like this:
 
   ```cs
   var innerChatClient = new AzureOpenAIClient(
