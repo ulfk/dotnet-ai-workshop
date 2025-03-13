@@ -13,19 +13,18 @@ Start by opening the project `exercises/Chat/Begin`. Near the top, find the vari
 * For Azure OpenAI, you should have code like this:
 
   ```cs
-  var azureOpenAiConfig = hostBuilder.Configuration.GetRequiredSection("AzureOpenAI");
-  var innerChatClient = new AzureOpenAIClient(new Uri(azureOpenAiConfig["Endpoint"]!), new ApiKeyCredential(azureOpenAiConfig["Key"]!))
-    .AsChatClient("gpt-4o-mini");
+  var innerChatClient = new AzureOpenAIClient(
+      new Uri(hostBuilder.Configuration["AI:Endpoint"]!),
+      new ApiKeyCredential(hostBuilder.Configuration["AI:Key"]!))
+      .AsChatClient("gpt-4o-mini");
   ```
 
-  If you're using a model other than `gpt-4o-mini`, update this code.
+  If you're using a model/deployment other than `gpt-4o-mini`, update this code.
 
 * For OpenAI Platform, you should assign a value like this:
 
   ```cs
-  // Or for OpenAI:
-  var openAiConfig = hostBuilder.Configuration.GetRequiredSection("OpenAI");
-  var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", openAiConfig["Key"]!).AsChatClient();
+  var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", hostBuilder.Configuration["AI:Key"]!).AsChatClient();
   ```
 
   If you're using a model other than `gpt-4o-mini`, update this code.
@@ -60,12 +59,14 @@ Set a breakpoint on `Console.WriteLine(response.Text);` and run again. In the de
  * `AdditionalProperties`, a string-object dictionary in which `IChatClient` implementations can place loosely-typed data that will show up in logging and telemetry.
  * `RawRepresentation`, the actual object from the underlying provider client library. You could use code like the following to access OpenAI-specific data, for example:
 
-```cs
-if (response.RawRepresentation is OpenAI.Chat.ChatCompletion openAiCompletion)
-{
-    Console.WriteLine(openAiCompletion.SystemFingerprint);
-}
-```
+    ```cs
+    if (response.RawRepresentation is OpenAI.Chat.ChatCompletion openAiCompletion)
+    {
+        Console.WriteLine(openAiCompletion.SystemFingerprint);
+    }
+    ```
+
+    Note that Azure OpenAI, OpenAI, and GitHub Models are all being used via the same underlying OpenAI client library, so this code will produce a `SystemFingerprint` for any of them.
 
 `IChatClient` is designed so that in most cases you can use the same programming model across all providers. But if you need to break out of the abstraction, it allows you to do so.
 
