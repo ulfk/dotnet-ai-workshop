@@ -47,7 +47,7 @@ In the `traffic-cam` directory, you'll find a series of images from traffic came
 var message = new ChatMessage(ChatRole.User, "What's in this image?");
 message.Contents.Add(new DataContent(File.ReadAllBytes(trafficImages[0]), "image/jpg"));
 
-var response = await chatClient.GetResponseAsync([message]);
+var response = await chatClient.GetResponseAsync(message);
 Console.WriteLine(response.Text);
 ```
 
@@ -68,7 +68,7 @@ foreach (var imagePath in trafficImages)
         Extract information from this image from camera {{name}}.
         """);
     message.Contents.Add(new DataContent(File.ReadAllBytes(imagePath), "image/jpg"));
-    var response = await chatClient.GetResponseAsync([message]);
+    var response = await chatClient.GetResponseAsync(message);
     Console.WriteLine(response.Text);
 }
 ```
@@ -101,14 +101,14 @@ class TrafficCamResult
 Now update your code to use it. Replace this:
 
 ```cs
-var response = await chatClient.GetResponseAsync([message]);
+var response = await chatClient.GetResponseAsync(message);
 Console.WriteLine(response.Text);
 ```
 
 ... with this:
 
 ```cs
-var response = await chatClient.GetResponseAsync<TrafficCamResult>([message]);
+var response = await chatClient.GetResponseAsync<TrafficCamResult>(message);
 if (response.TryGetResult(out var result))
 {
     Console.WriteLine($"{name} status: {result.Status} (cars: {result.NumCars}, trucks: {result.NumTrucks})");
@@ -147,14 +147,14 @@ var message = new ChatMessage(ChatRole.User, $$"""
 ... and modify the `GetResponseAsync<T>` call to:
 
 ```cs
-var response = await chatClient.GetResponseAsync<TrafficCamResult>([message], useNativeJsonSchema: isOllama);
+var response = await chatClient.GetResponseAsync<TrafficCamResult>(message, useNativeJsonSchema: isOllama);
 ```
 
 Setting `useNativeJsonSchema` causes Microsoft.Extensions.AI *not* to augment the prompt with JSON schema (since it assumes the model accepts JSON schema natively, and doesn't need prompt augmentation). This reduces the complexity of the prompt, making smaller models more reliable.
 
 It should be really quite reliable now. Note: You don't need to do this if you're using `gpt-4o-mini`.
 
-## Raising alerts via native function calling
+## Raising alerts via function calling
 
 One of the drawbacks of structured output is that the model is forced to respond in your chosen format even if it's not actually appropriate for the input.
 
@@ -163,7 +163,7 @@ For example, consider image `3199.jpg` - there's no sensible `TrafficCamResult` 
 To address this, let's raise alerts if there's something wrong with the input image. This could also be used to raise alerts if there's something dangerous or strange on the road.
 
 > [!TIP]
-> The following instructions require a model that supports native function calling, such as `gpt-4o-mini` or `llama3.2-vision`. If you're using `llava`, skip ahead to the next section.
+> The following instructions require a model that supports function calling, such as `gpt-4o-mini` or `llama3.2-vision`. If you're using `llava`, skip ahead to the next section.
 
 Define a C# function to call if there's an alert. Add this right above your `foreach` loop:
 
@@ -181,7 +181,7 @@ var chatOptions = new ChatOptions { Tools = [raiseAlert] };
 Now update your `GetResponseAsync` call to use it:
 
 ```cs
-var response = await chatClient.GetResponseAsync<TrafficCamResult>([message], chatOptions, useNativeJsonSchema: isOllama);
+var response = await chatClient.GetResponseAsync<TrafficCamResult>(message, chatOptions, useNativeJsonSchema: isOllama);
 ```
 
 And don't forget to actually enable function invocation in your pipeline! Add `UseFunctionInvocation` to your `hostBuilder.Services.AddChatClient` call as follows:
@@ -263,10 +263,21 @@ In this case you should be able to do it using an approach like the following:
 
 The first time you run it like this, it should take the same amount of time as usual, as it's populating the cache. But on subsequent runs, it should complete immediately.
 
-Exercise: how does it differ if you move `UseDistributedCache` to be *after* `UseFunctionInvocation`? You'll have to shut down and restart your Redis instance to find out, to avoid reusing cache entries from before that change. Why does it differ? What use cases are there for each of these two options?
+Exercise: how does it differ if you move `UseDistributedCache` to be *before* `UseFunctionInvocation`? You'll have to delete and recreate your Redis instance to find out, to avoid reusing cache entries from before that change. Why does it differ? What use cases are there for each of these two options?
+
+<details>
+<summary>ANSWER</summary>
+
+If `UseDistributedCache` goes *before* `UseFunctionInvocation` in the pipeline, then whenever a call matches a cache entry, the cached result will be returned from the caching middleware without it ever getting as far as the function invocation step. So, for cache hits, your `AIFunction` callbacks will not get called (and you won't see the red alert text). This is useful if the `AIFunction` callbacks are themselves expensive and you want to avoid repeating the work.
+
+Conversely, if `UseDistributedCache` goes *after* `UseFunctionInvocation` in the pipeline, then function invocation will behave as normal (and your `AIFunction` callbacks will get called, regardless of cache hits or misses). This is useful if the `AIFunction` callbacks aren't pure functions, i.e., they have some side-effect besides just returning a value, and you want those side-effects to be triggered on every request regardless of cache hits/misses.
+
+This is the same as any other situation when you introduce caching to a software system. It's up to you to decide which parts of processing flow are cached and which aren't.
+
+</details>
 
 ## Advanced challenge
 
-Can you build a web UI that streams video from the webcam, and provides a live caption? Or perhaps a rather questionable authentication system when some action is authorized only when the user holds up a particular secret combination of objects?
+Can you build a web UI that streams video from the webcam, and provides a live caption? Or perhaps a rather awful auth mechanism that authorizes some action only when the user performs a particular secret hand gesture?
 
-Consider starting from the Blazor Server sample at https://github.com/baltermia/blazor-camera-streamer and adding the necessary `Microsoft.Extensions.AI` libraries to connect to your chosen AI service.
+Consider starting from the Blazor Server sample at https://github.com/baltermia/blazor-camera-streamer and add the necessary `Microsoft.Extensions.AI` libraries to connect to your chosen AI service.
