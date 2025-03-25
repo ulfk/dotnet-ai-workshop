@@ -1,3 +1,5 @@
+Steve Sanderson shows this in action in his NDC keynote found here: https://www.youtube.com/watch?v=awztkr8n0AA
+
 # .NET AI Workshop
 
 Welcome! This workshop aims to help you get started adding AI features to .NET applications.
