@@ -307,8 +307,7 @@ _messages.Add(new(ChatRole.User, $$"""
     }
     """));
 
-var isOllama = chatClient.GetService<OllamaChatClient>() is not null;
-var response = await chatClient.GetResponseAsync<ChatBotAnswer>(_messages, cancellationToken: cancellationToken, useNativeJsonSchema: isOllama);
+var response = await chatClient.GetResponseAsync<ChatBotAnswer>(_messages, cancellationToken: cancellationToken);
 _messages.AddMessages(response);
 
 return response.TryGetResult(out var answer)
@@ -486,7 +485,7 @@ var response = await evaluationChatClient.GetResponseAsync<ScoreResponse>($$"""
       "Justification": string, // Up to 10 words
       "ScoreLabel": string // One of "Awful", "Poor", "Good", "Perfect"
     }
-    """, useNativeJsonSchema: isOllama);
+    """);
 ```
 
 Note that asking for the score as a label, rather than as a word, tends to produce more consistent results. Language models understand language better than numbers.
@@ -551,7 +550,7 @@ Find where `evaluationChatClient` is defined and update it *not* to use `innerCh
 var evaluationChatClient = new ChatClientBuilder(
         new AzureOpenAIClient(
             new Uri(config["AI:Endpoint"]!),
-            new ApiKeyCredential(config["AI:Key"]!)).AsChatClient("gpt-4o-mini"))
+            new ApiKeyCredential(config["AI:Key"]!)).GetChatClient("gpt-4o-mini").AsIChatClient())
     .UseRetryOnRateLimit()
     .Build();
 ```
@@ -562,7 +561,7 @@ var evaluationChatClient = new ChatClientBuilder(
 var evaluationChatClient = new ChatClientBuilder(
         new OpenAI.Chat.ChatClient(
             "gpt-4o-mini",
-            config["AI:Key"]!).AsChatClient())
+            config["AI:Key"]!).AsIChatClient)
     .UseRetryOnRateLimit()
     .Build();
 ```
@@ -684,7 +683,7 @@ var response = await evaluationChatClient.GetResponseAsync<EvaluationResponse>($
       "AnswerGroundedness": { "Justification": string, "ScoreLabel": string },
       "AnswerCorrectness": { "Justification": string, "ScoreLabel": string },
     }
-    """, useNativeJsonSchema: isOllama);
+    """);
 ```
 
 Also define `EvaluationResponse`:

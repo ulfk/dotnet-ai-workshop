@@ -16,11 +16,11 @@ hostBuilder.Services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(
 // For GitHub Models or Azure OpenAI:
 var aiConfig = hostBuilder.Configuration.GetRequiredSection("AI");
 var innerChatClient = new AzureOpenAIClient(new Uri(aiConfig["Endpoint"]!), new ApiKeyCredential(aiConfig["Key"]!))
-    .AsChatClient("gpt-4o-mini");
+    .GetChatClient("gpt-4o-mini").AsIChatClient();
 
 // Or for OpenAI Platform:
 // var aiConfig = hostBuilder.Configuration.GetRequiredSection("AI");
-// var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", aiConfig["Key"]!).AsChatClient();
+// var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", aiConfig["Key"]!).AsIChatClient();
 
 // Or for Ollama:
 // IChatClient innerChatClient = new OllamaChatClient(new Uri("http://localhost:11434"), "llava");
@@ -32,7 +32,6 @@ hostBuilder.Services.AddChatClient(innerChatClient)
 var app = hostBuilder.Build();
 var chatClient = app.Services.GetRequiredService<IChatClient>();
 var trafficImages = Directory.GetFiles("../../../traffic-cam", "*.jpg");
-var isOllama = chatClient.GetService<OllamaChatClient>() is not null;
 
 var raiseAlert = AIFunctionFactory.Create((string cameraName, string alertReason) =>
 {
@@ -54,7 +53,7 @@ foreach (var imagePath in trafficImages)
         not just because of traffic volume.
         """);
     message.Contents.Add(new DataContent(File.ReadAllBytes(imagePath), "image/jpg"));
-    var response = await chatClient.GetResponseAsync<TrafficCamResult>([message], chatOptions, useNativeJsonSchema: isOllama);
+    var response = await chatClient.GetResponseAsync<TrafficCamResult>([message], chatOptions);
 
     if (response.TryGetResult(out var result))
     {
