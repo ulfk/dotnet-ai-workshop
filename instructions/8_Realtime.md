@@ -300,6 +300,10 @@ Remember that realtime is currently in beta/preview and can't yet be used in pro
 
 ## Optional exercise
 
+For no additional learning but potential amusement, try persuading it to speak with the most extreme cowboy accent you can manage. Simply prompting `Use a cowboy accent` will not make much difference so you'll have to persuade it harder. You may find that if the user also instructs it to dial up the accent by 10x that will produce more effect than the initial system prompt.
+
+## Optional exercise
+
 Try to modify your code to represent an *outbound* call example. Your goal is to collect specific information from the human. For example, this may be an outbound call to a vehicle mechanic, asking for the price and availability for servicing a particular car model.
 
 Have the AI introduce itself and try to get all the necessary information. Once the human has supplied all the requested information, call a function to simulate storing the results, then end the conversation.
