@@ -13,11 +13,11 @@ var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
 
 // For GitHub Models or Azure OpenAI:
 IChatClient innerChatClient = new AzureOpenAIClient(new Uri(config["AI:Endpoint"]!), new ApiKeyCredential(config["AI:Key"]!))
-    .AsChatClient("gpt-4o-mini");
+    .GetChatClient("gpt-4o-mini").AsIChatClient();
 
 // Or for OpenAI Platform:
 // var aiConfig = config.GetRequiredSection("AI");
-// var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", aiConfig["Key"]!).AsChatClient();
+// var innerChatClient = new OpenAI.Chat.ChatClient("gpt-4o-mini", aiConfig["Key"]!).AsIChatClient();
 
 // Or for Ollama:
 // IChatClient innerChatClient = new OllamaChatClient(new Uri("http://127.0.0.1:11434"), "llama3.1");
@@ -37,7 +37,6 @@ var evaluationChatClient = new ChatClientBuilder(innerChatClient)
 var embeddingGenerator = new OllamaEmbeddingGenerator(new Uri("http://127.0.0.1:11434"), modelId: "all-minilm");
 
 var qdrantClient = new QdrantClient("127.0.0.1");
-var isOllama = evaluationChatClient.GetService<OllamaChatClient>() is not null;
 
 // ------ LOAD TEST DATA ------
 

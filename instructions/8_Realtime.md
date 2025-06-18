@@ -290,14 +290,17 @@ This is similar to how `IChatClient` doesn't call functions automatically unless
 Add this *after* your `switch` statement:
 
 ```cs
-// This is actually an extension method provided by Microsoft.Extensions.AI.OpenAI
-// It knows how to invoke an AIFunction and continue the realtime conversation
+// This is a helper method provided inside this sample project
 await session.HandleToolCallsAsync(update, tools);
 ```
 
 If you run it now, it should work. Try booking a table - it will call `CheckTableAvailability` to determine availability, then will reply to the user.
 
 Remember that realtime is currently in beta/preview and can't yet be used in production. It has plenty of quirks, and the code you're using in this example might itself be imperfect (e.g., the audio sometimes gets cut off at the end). Hopefully this will all be streamlined by the time it's ready for production usage.
+
+## Optional exercise
+
+For no additional learning but potential amusement, try persuading it to speak with the most extreme cowboy accent you can manage. Simply prompting `Use a cowboy accent` will not make much difference so you'll have to persuade it harder. You may find that if the user also instructs it to dial up the accent by 10x that will produce more effect than the initial system prompt.
 
 ## Optional exercise
 
