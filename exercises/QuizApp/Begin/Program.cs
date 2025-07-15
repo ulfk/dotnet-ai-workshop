@@ -5,12 +5,15 @@ using System.ClientModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TODO:
-//  - Decide which LLM backend you're going to use, and register it in DI
-//  - It can be any IChatClient implementation, for example AzureOpenAIClient or OllamaChatClient
-//  - See instructions for sample code
+
+
+var innerChatClient = new AzureOpenAIClient(
+        new Uri(builder.Configuration["AI:Endpoint"]!),
+        new ApiKeyCredential(builder.Configuration["AI:Key"]!))
+    .GetChatClient("gpt-4o-mini").AsIChatClient();
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddChatClient(innerChatClient);
 
 var app = builder.Build();
 
