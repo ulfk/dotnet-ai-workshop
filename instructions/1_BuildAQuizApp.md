@@ -16,6 +16,7 @@ You just need a GitHub account. To get an API key:
   * Visit https://github.com/marketplace/models/azure-openai/gpt-4o/playground
   * In the top-right corner, click the green button labelled *Use this model*. Follow the instructions to **get a personal access token**. It's easiest if you get a **developer key** (i.e., use the *GitHub (Free)* option).
   * When generating your developer key, don't give it any permissions or access to any of your private repositories. It doesn't need any of that.
+    * But be sure to enable read-access for "Models" as this is needed to use the AI
   * You'll get a key in the form `github_pat_........`. Copy this and store it somewhere temporarily. You'll need to use it soon.
 
 ### Option 2: OpenAI / Azure OpenAI
