@@ -9,3 +9,18 @@ button.btn[disabled],button.btn-primary[disabled] {
     border-color: #C0C0C0;
     color: #A0A0A0;
 }
+#AnswerHistory {
+    width: 80%;
+}
+table.table-bordered {
+    border: 1px solid #ddd;
+    border-spacing: 0;
+}
+tr,th,td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+}
+th {
+    font-weight: bold;
+    background-color: #f7f7f7;
+}

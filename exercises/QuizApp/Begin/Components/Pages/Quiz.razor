@@ -1,6 +1,6 @@
 ﻿@page "/quiz"
 
-<h2>Question @_currentQuestionNumber of @_numQuestions. Your score: @_pointsScored points</h2>
+<h2>Question @_currentQuestionNumber of @QuizSettings.NumberOfQuestions. Your score: @_pointsScored points</h2>
 
 <p class="question">@(_currentQuestionText ?? "Getting question...")</p>
 
@@ -16,13 +16,40 @@
 {
     <h3>@_currentQuestionOutcome</h3>
 
-    @if (_currentQuestionNumber < _numQuestions)
+    @if (_currentQuestionNumber < QuizSettings.NumberOfQuestions)
     {
         <button class="btn btn-primary" @onclick="@MoveToNextQuestionAsync">Next question</button>
     }
     else
     {
-        <h3>That's all for the quiz. You got @_pointsScored out of  @_numQuestions possible points.</h3>
+        <h3>That's all for the quiz. You got @_pointsScored out of  @QuizSettings.NumberOfQuestions possible points.</h3>
         <p><a class="btn btn-primary" href="">Home</a></p>
     }
 }
+
+@if (_questionResults.Count > 0)
+{
+    <h3>Question history</h3>
+    <div class="table-responsive">
+        <table class="table-bordered" id="AnswerHistory">
+            <thead>
+                <th>Question</th>
+                <th>Answer</th>
+                <th>Correct?</th>
+                <th>Response</th>
+            </thead>
+            <tbody>
+            @foreach (var item in _questionResults)
+            {
+                <tr>
+                    <td>@item.Question</td>
+                    <td>@item.Answer</td>
+                    <td>@(item.AnswerIsCorrect ? "\u2705" : "\u274C")</td>
+                    <td>@item.Outcome</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
